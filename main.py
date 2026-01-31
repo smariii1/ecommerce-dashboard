@@ -1,114 +1,85 @@
-# main_cloud.py - специально для Streamlit Cloud
 import streamlit as st
-import duckdb
-import os
+import pandas as pd
 
-st.set_page_config(page_title="E-commerce Dashboard", layout="wide")
-
-st.title("📊 E-commerce Sales Dashboard")
-st.markdown("**Курсовой проект - анализ продаж интернет-магазина**")
-
-# Создаем базу данных в памяти (не используем файлы)
-conn = duckdb.connect(':memory:')
-
-# Создаем тестовые данные
-conn.execute("""
-    CREATE TABLE customers AS 
-    SELECT * FROM (VALUES
-        (1, 'Иван Иванов', 'Москва', 25),
-        (2, 'Мария Петрова', 'СПб', 30),
-        (3, 'Алексей Сидоров', 'Казань', 35)
-    ) AS t(id, name, city, age)
-""")
-
-conn.execute("""
-    CREATE TABLE products AS 
-    SELECT * FROM (VALUES
-        (101, 'iPhone 14', 'Смартфоны', 999.99),
-        (102, 'Ноутбук Dell', 'Ноутбуки', 1299.99),
-        (103, 'Наушники Sony', 'Наушники', 199.99)
-    ) AS t(id, name, category, price)
-""")
-
-conn.execute("""
-    CREATE TABLE orders AS 
-    SELECT * FROM (VALUES
-        (1001, 1, 101, '2023-06-01', 1, 999.99, 'completed'),
-        (1002, 2, 102, '2023-06-15', 1, 1299.99, 'completed'),
-        (1003, 3, 103, '2023-07-01', 2, 399.98, 'pending')
-    ) AS t(order_id, customer_id, product_id, order_date, quantity, total_amount, status)
-""")
-
-st.markdown("---")
-
-# 1. Ключевые метрики
-st.subheader("📈 Ключевые показатели")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    total_orders = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
-    st.metric("Всего заказов", total_orders)
-
-with col2:
-    total_revenue = conn.execute("SELECT SUM(total_amount) FROM orders WHERE status='completed'").fetchone()[0]
-    st.metric("Общая выручка", f"${total_revenue:,.2f}")
-
-with col3:
-    avg_order = conn.execute("SELECT AVG(total_amount) FROM orders WHERE status='completed'").fetchone()[0]
-    st.metric("Средний чек", f"${avg_order:.2f}")
-
-st.markdown("---")
-
-# 2. Фильтры
-st.sidebar.title("🔧 Фильтры")
-
-status_filter = st.sidebar.selectbox(
-    "Статус заказа",
-    ["Все", "completed", "pending"]
+st.set_page_config(
+  page_title="E-commerce Dashboard",
+  layout="wide"
 )
 
-# 3. Таблицы с данными
-st.subheader("📋 Данные из базы")
+st.title("📊 E-commerce Dashboard")
 
-tab1, tab2, tab3 = st.tabs(["Заказы", "Товары", "Клиенты"])
+# === Загрузка данных ===
+@st.cache_data
+def load_data():
+  return pd.read_csv("data.csv")
 
-with tab1:
-    if status_filter == "Все":
-        orders = conn.execute("SELECT * FROM orders").fetchdf()
-    else:
-        orders = conn.execute(f"SELECT * FROM orders WHERE status='{status_filter}'").fetchdf()
-    st.dataframe(orders)
+try:
+  df = load_data()
+except FileNotFoundError:
+  st.error("Файл data.csv не найден. Добавь его в репозиторий.")
+  st.stop()
 
-with tab2:
-    products = conn.execute("SELECT * FROM products").fetchdf()
-    st.dataframe(products)
+# === Просмотр данных ===
+st.subheader("📦 Данные")
+st.dataframe(df)
 
-with tab3:
-    customers = conn.execute("SELECT * FROM customers").fetchdf()
-    st.dataframe(customers)
+# === Базовая информация ===
+st.subheader("ℹ️ Общая информация")
 
-# 4. Простой анализ
-st.subheader("📊 Анализ данных")
+c1, c2, c3 = st.columns(3)
 
-col1, col2 = st.columns(2)
+with c1:
+  st.metric("Всего заказов", len(df))
 
-with col1:
-    st.write("**Статусы заказов:**")
-    status_data = conn.execute("SELECT status, COUNT(*) as count FROM orders GROUP BY status").fetchdf()
-    st.dataframe(status_data)
+with c2:
+  if "price" in df.columns:
+    st.metric("Общая выручка", f"{df['price'].sum():,.0f}")
+  else:
+    st.warning("Нет колонки price")
 
-with col2:
-    st.write("**Товары по категориям:**")
-    category_data = conn.execute("SELECT category, COUNT(*) as count FROM products GROUP BY category").fetchdf()
-    st.dataframe(category_data)
+with c3:
+  if "customer_id" in df.columns:
+    st.metric("Клиентов", df["customer_id"].nunique())
+  else:
+    st.warning("Нет customer_id")
 
-conn.close()
+# === Фильтр ===
+st.subheader("🔎 Фильтрация")
 
-st.markdown("---")
-st.success("✅ Дашборд работает на Streamlit Cloud!")
-st.info("📁 Полный код: https://github.com/smariii1/ecommerce-dashboard")
+if "category" in df.columns:
+  cats = st.multiselect(
+    "Выбери категории",
+    df["category"].unique()
+  )
+  if cats:
+    df = df[df["category"].isin(cats)]
+
+# === График ===
+st.subheader("📈 Продажи")
+
+if "date" in df.columns and "price" in df.columns:
+  df["date"] = pd.to_datetime(df["date"])
+  sales = df.groupby("date")["price"].sum()
+  st.line_chart(sales)
+else:
+  st.warning("Для графика нужны колонки date и price")
+
+# === Топ товаров ===
+st.subheader("🔥 Топ товаров")
+
+if "product" in df.columns and "price" in df.columns:
+  top = (
+    df.groupby("product")["price"]
+    .sum()
+    .sort_values(ascending=False)
+    .head(10)
+  )
+  st.bar_chart(top)
+else:
+  st.warning("Нужны колонки product и price")
+
 # Updated via GitHub
+
 
 
 
