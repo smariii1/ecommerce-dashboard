@@ -1,120 +1,111 @@
+# main_simple.py - работает на Streamlit Cloud
 import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
+import duckdb
 
-# Настройка страницы
-st.set_page_config(
-    page_title="E-commerce Dashboard",
-    page_icon="📊",
-    layout="wide"
-)
+st.set_page_config(page_title="E-commerce Dashboard", layout="wide")
 
 st.title("📊 E-commerce Sales Dashboard")
-st.markdown("Интерактивная панель для анализа продаж интернет-магазина")
+st.markdown("**Курсовой проект - анализ продаж**")
 
-# Создаем боковую панель с фильтрами
-st.sidebar.title("🔧 Фильтры")
+# Создаем базу в памяти
+conn = duckdb.connect(':memory:')
 
-# Фильтр по дате
-date_filter = st.sidebar.selectbox(
-    "Период",
-    ["Все время", "Последние 30 дней", "Последние 90 дней", "Текущий год"]
-)
+# Создаем тестовые данные
+conn.execute("""
+    CREATE TABLE IF NOT EXISTS sales (
+        month TEXT,
+        category TEXT,
+        revenue REAL,
+        orders INTEGER
+    )
+""")
 
-# Фильтр по категории
-category_filter = st.sidebar.selectbox(
-    "Категория продукта",
-    ["Все категории", "Bikes", "Components", "Clothing", "Accessories"]
-)
+conn.execute("""
+    INSERT INTO sales VALUES
+    ('2023-01', 'Смартфоны', 10000, 50),
+    ('2023-02', 'Ноутбуки', 15000, 30),
+    ('2023-03', 'Наушники', 8000, 80),
+    ('2023-04', 'Планшеты', 12000, 40),
+    ('2023-05', 'Аксессуары', 5000, 100)
+""")
 
 st.markdown("---")
 
 # 1. Ключевые метрики
-st.subheader("📈 Ключевые показатели эффективности (KPI)")
+st.subheader("📈 Ключевые показатели")
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric(
-        label="Общая выручка",
-        value="$1,234,567",
-        delta="+12.5%"
-    )
+    total_rev = conn.execute("SELECT SUM(revenue) FROM sales").fetchone()[0]
+    st.metric("Общая выручка", f"${total_rev:,.2f}")
 
 with col2:
-    st.metric(
-        label="Количество заказов",
-        value="4,567",
-        delta="+8.3%"
-    )
+    total_orders = conn.execute("SELECT SUM(orders) FROM sales").fetchone()[0]
+    st.metric("Всего заказов", total_orders)
 
 with col3:
-    st.metric(
-        label="Средний чек",
-        value="$270.45",
-        delta="+5.2%"
-    )
-
-with col4:
-    st.metric(
-        label="Уникальных клиентов",
-        value="2,345",
-        delta="+15.7%"
-    )
+    avg_order = conn.execute("SELECT AVG(revenue/orders) FROM sales").fetchone()[0]
+    st.metric("Средний чек", f"${avg_order:.2f}")
 
 st.markdown("---")
 
-# 2. Пример данных
-st.subheader("📅 Пример данных о продажах")
+# 2. Фильтры
+st.sidebar.title("🔧 Фильтры")
 
-# Создаем тестовые данные
-sales_data = pd.DataFrame({
-    'Месяц': ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь'],
-    'Продажи': [100000, 120000, 90000, 150000, 180000, 200000],
-    'Клиенты': [500, 600, 450, 750, 900, 1000],
-    'Средний чек': [200, 220, 210, 230, 240, 250]
-})
+categories = conn.execute("SELECT DISTINCT category FROM sales").fetchall()
+categories = ["Все"] + [c[0] for c in categories]
+selected_cat = st.sidebar.selectbox("Категория", categories)
 
-# Диаграмма 1: Линейный график
-fig1 = px.line(sales_data, x='Месяц', y='Продажи', 
-               title='Динамика продаж по месяцам',
-               markers=True)
-st.plotly_chart(fig1, use_container_width=True)
+# 3. Таблица данных
+st.subheader("📋 Данные о продажах")
 
-# Диаграмма 2: Столбчатая диаграмма
-fig2 = px.bar(sales_data, x='Месяц', y='Клиенты',
-              title='Количество клиентов по месяцам',
-              color='Клиенты',
-              color_continuous_scale='Blues')
-st.plotly_chart(fig2, use_container_width=True)
+if selected_cat == "Все":
+    data = conn.execute("SELECT * FROM sales ORDER BY month").fetchdf()
+else:
+    data = conn.execute(f"SELECT * FROM sales WHERE category='{selected_cat}' ORDER BY month").fetchdf()
 
-# Диаграмма 3: Круговая диаграмма
-category_data = pd.DataFrame({
-    'Категория': ['Смартфоны', 'Ноутбуки', 'Наушники', 'Планшеты', 'Аксессуары'],
-    'Продажи': [35, 25, 20, 15, 5]
-})
-fig3 = px.pie(category_data, values='Продажи', names='Категория',
-              title='Распределение продаж по категориям',
-              hole=0.4)
-st.plotly_chart(fig3, use_container_width=True)
+st.dataframe(data)
 
-# Диаграмма 4: Точечная диаграмма
-fig4 = px.scatter(sales_data, x='Клиенты', y='Продажи',
-                  size='Средний чек', color='Месяц',
-                  title='Зависимость продаж от количества клиентов',
-                  labels={'Клиенты': 'Количество клиентов', 'Продажи': 'Объем продаж ($)'})
-st.plotly_chart(fig4, use_container_width=True)
+# 4. Простая визуализация
+st.subheader("📊 Визуализация")
 
-# 3. Таблица с данными
-with st.expander("📋 Просмотр данных"):
-    st.dataframe(sales_data)
-    st.write(f"Всего записей: {len(sales_data)}")
+# Столбчатая диаграмма (встроенная в Streamlit)
+if not data.empty:
+    chart_data = data[['month', 'revenue']].set_index('month')
+    st.bar_chart(chart_data)
+
+# 5. Дополнительный анализ
+st.subheader("📝 Анализ по категориям")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.write("**Выручка по категориям:**")
+    cat_revenue = conn.execute("""
+        SELECT category, SUM(revenue) as total
+        FROM sales 
+        GROUP BY category
+        ORDER BY total DESC
+    """).fetchdf()
+    st.dataframe(cat_revenue)
+
+with col2:
+    st.write("**Заказы по месяцам:**")
+    monthly = conn.execute("""
+        SELECT month, SUM(orders) as orders
+        FROM sales
+        GROUP BY month
+        ORDER BY month
+    """).fetchdf()
+    st.dataframe(monthly)
+
+conn.close()
 
 st.markdown("---")
-st.markdown("**🎯 Курсовой проект по анализу данных**")
-st.markdown("👩‍💻 Автор: [Ваше Имя]")
+st.success("✅ Дашборд работает на Streamlit Cloud!")
+st.info("📁 Полный код: https://github.com/smariii1/ecommerce-dashboard")
 # Updated via GitHub
+
 
 
