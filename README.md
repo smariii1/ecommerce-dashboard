@@ -4,7 +4,7 @@
 
 Курсовой проект — интерактивный дашборд для анализа данных о продажах интернет-магазина электроники.
 
-# Ссылка задеплоенное решение
+# Ссылка  на задеплоенное решение
 https://ecommerce-dashboard-9btducahm5ghjd8v5rby7l.streamlit.app/
 
 **Студентка:** Саидова Марям  
@@ -41,6 +41,7 @@ https://ecommerce-dashboard-9btducahm5ghjd8v5rby7l.streamlit.app/
 - **Orders** — история заказов
 
 ---
+
 
 
 
