@@ -26,3 +26,4 @@ col3.metric("Клиентов", "245", "+8%")
 
 # Updated via GitHub web interface
 
+
