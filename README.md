@@ -1,36 +1,87 @@
-﻿# E-commerce Sales Dashboard
- 
-Курсовой проект - интерактивный дашборд для анализа данных о продажах интернет-магазина электроники.
+# 📊 E-commerce Sales Dashboard
 
-**Студентка:** Саидова Марям 
+![Предварительный просмотр дашборда] (<img width="2439" height="574" alt="image" src="https://github.com/user-attachments/assets/db1df237-d1cc-4a15-824d-0c79f0de84ea" />)
+
+Курсовой проект — интерактивный дашборд для анализа данных о продажах интернет-магазина электроники.
+
+**Студентка:** Саидова Марям  
 **Курс:** Анализ данных
 
+---
+
+## 📁 Структура проекта
+
 ecommerce-dashboard/
-├── main.py              # Дашборд Streamlit
-├── ddl.py               # Создание БД
-├── db.py                # Работа с БД
-├── requirements.txt     # Зависимости
-├── queries/             # SQL скрипты
-│   ├── 01_create_tables.sql
-│   ├── 02_create_views.sql
-│   └── 03_queries.sql
-├── source/              # Данные
-└── utils/               # Вспомогательные
+├── main.py # Дашборд Streamlit
+├── ddl.py # Создание БД
+├── db.py # Работа с БД
+├── requirements.txt # Зависимости
+├── queries/ # SQL скрипты
+│ ├── 01_create_tables.sql
+│ ├── 02_create_views.sql
+│ └── 03_queries.sql
+├── source/ # Исходные данные
+└── utils/ # Вспомогательные модули
 
-**Что внутри**
-4+ диаграммы 📈
-2+ фильтра 🔍
-SQL запросы 🗃️
-База данных 🦆
+---
 
-📊 Модель данных
-Таблицы базы данных:
+## 🚀 Функциональность
 
-👤 Customers - информация о клиентах
+✅ **4+ диаграммы** для визуализации данных  
+✅ **2+ фильтра** для интерактивного анализа  
+✅ **SQL запросы** к базе данных  
+✅ **База данных** с историей продаж  
 
-📦 Products - каталог товаров
+---
 
-🛒 Orders - история заказов
+## 🗃️ Модель данных
 
-<img width="2439" height="574" alt="image" src="https://github.com/user-attachments/assets/db1df237-d1cc-4a15-824d-0c79f0de84ea" />
-<img width="2439" height="574" alt="image" src="https://github.com/user-attachments/assets/64a00185-a2b8-4245-ae50-2b658f3307a8" />
+**Основные таблицы:**
+- **Customers** — информация о клиентах
+- **Products** — каталог товаров
+- **Orders** — история заказов
+
+---
+
+## 🔗 Архитектура системы
+
+```mermaid
+graph TD
+    Customers --> Products
+    Customers --> Orders
+    Orders --> Products
+    Orders --> Analytics
+    Orders --> Visualizations
+Связи:
+
+Customers → Products (покупают товары)
+
+Customers → Orders (создают заказы)
+
+Orders → Products (заказы содержат товары)
+
+Orders → Analytics (данные для анализа)
+
+Orders → Visualizations (данные для визуализаций)
+📈 Визуализации
+Дашборд включает диаграммы:
+
+Динамика продаж по времени
+
+Распределение по категориям товаров
+
+География покупателей
+
+Рейтинг товаров
+
+Анализ клиентской базы
+
+🛠️ Технологии
+Python (Streamlit, Pandas)
+
+SQLite / PostgreSQL
+
+SQL для запросов
+
+Plotly / Matplotlib для визуализации
+
