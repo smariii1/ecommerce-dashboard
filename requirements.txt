@@ -1,5 +1,5 @@
-streamlit==1.29.0
-pandas==2.1.4
 plotly==5.18.0
 duckdb
 numpy==1.26.4
+streamlit>=1.30
+pandas>=2.2
