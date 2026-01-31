@@ -1,57 +1,59 @@
 import streamlit as st
 import duckdb
+import pandas as pd
 
-st.set_page_config(page_title="DuckDB Project")
-st.title("📦 DuckDB база данных")
+st.set_page_config(page_title="Простой анализ продаж", layout="wide")
+st.title("📊 Простой анализ продаж")
 
-# подключение к базе данных
-con = duckdb.connect("database.db")
+# подключение к DuckDB
+con = duckdb.connect("sales.db")
 
-# создание таблицы
+# создаём таблицу с данными
 con.execute("""
-CREATE TABLE IF NOT EXISTS products (
-  id INTEGER,
-  name TEXT,
-  price INTEGER
+CREATE TABLE IF NOT EXISTS sales (
+    month TEXT,
+    sales INTEGER,
+    clients INTEGER
 )
 """)
 
-# добавление данных (если таблица пустая)
-count = con.execute("SELECT COUNT(*) FROM products").fetchone()[0]
-
+# проверяем, есть ли данные, если нет — добавляем
+count = con.execute("SELECT COUNT(*) FROM sales").fetchone()[0]
 if count == 0:
-  con.execute("""
-  INSERT INTO products VALUES
-  (1, 'Phone', 500),
-  (2, 'Laptop', 1200),
-  (3, 'Headphones', 150)
-  """)
+    con.execute("""
+    INSERT INTO sales VALUES
+    ('Янв', 100, 50),
+    ('Фев', 150, 60),
+    ('Мар', 200, 70),
+    ('Апр', 180, 65)
+    """)
 
-st.success("База данных создана и заполнена")
+# читаем данные из базы
+df = con.execute("SELECT * FROM sales").df()
 
-# вывод данных
-st.subheader("📊 Данные из базы")
-
-df = con.execute("SELECT * FROM products").df()
+# таблица
+st.subheader("Данные из базы")
 st.dataframe(df)
 
-# простой SQL-запрос
-st.subheader("🔍 SQL запрос")
+# график
+st.subheader("График продаж")
+st.line_chart(df.set_index("month"))
 
-query = st.text_input(
-  "Введите SQL запрос",
-  "SELECT name, price FROM products WHERE price > 300"
-)
+# ключевые цифры
+st.subheader("Ключевые цифры")
+total_sales = df["sales"].sum()
+total_clients = df["clients"].sum()
+avg_check = total_sales / total_clients if total_clients > 0 else 0
 
-if st.button("Выполнить"):
-  try:
-    res = con.execute(query).df()
-    st.dataframe(res)
-  except Exception as e:
-    st.error("Ошибка в SQL запросе")
+c1, c2, c3 = st.columns(3)
+c1.metric("Всего продаж", total_sales)
+c2.metric("Средний чек", f"${int(avg_check)}")
+c3.metric("Клиентов", total_clients)
+
 
 
 # Updated via GitHub
+
 
 
 
