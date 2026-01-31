@@ -1,6 +1,6 @@
 # 📊 E-commerce Sales Dashboard
 
-![Предварительный просмотр дашборда] (<img width="2439" height="574" alt="image" src="https://github.com/user-attachments/assets/db1df237-d1cc-4a15-824d-0c79f0de84ea" />)
+Предварительный просмотр дашборда <img width="2439" height="574" alt="image" src="https://github.com/user-attachments/assets/db1df237-d1cc-4a15-824d-0c79f0de84ea" />
 
 Курсовой проект — интерактивный дашборд для анализа данных о продажах интернет-магазина электроники.
 
@@ -47,41 +47,12 @@ ecommerce-dashboard/
 
 ```mermaid
 graph TD
-    Customers --> Products
-    Customers --> Orders
-    Orders --> Products
-    Orders --> Analytics
-    Orders --> Visualizations
-Связи:
-
-Customers → Products (покупают товары)
-
-Customers → Orders (создают заказы)
-
-Orders → Products (заказы содержат товары)
-
-Orders → Analytics (данные для анализа)
-
-Orders → Visualizations (данные для визуализаций)
-📈 Визуализации
-Дашборд включает диаграммы:
-
-Динамика продаж по времени
-
-Распределение по категориям товаров
-
-География покупателей
-
-Рейтинг товаров
-
-Анализ клиентской базы
-
-🛠️ Технологии
-Python (Streamlit, Pandas)
-
-SQLite / PostgreSQL
-
-SQL для запросов
+    A[Customers] --> B[Products]
+    A --> C[Orders]
+    C --> B
+    C --> D[Analytics]
+    C --> E[Visualizations]
 
 Plotly / Matplotlib для визуализации
+
 
